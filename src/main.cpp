@@ -72,6 +72,8 @@ int main()
 			double sense_y = std::stod(j[1]["sense_y"].get<std::string>());
 			double sense_theta = std::stod(j[1]["sense_theta"].get<std::string>());
 
+            std::cout << sense_x << "\t" << sense_y << "\t" << sense_theta << std::endl;
+
 			pf.init(sense_x, sense_y, sense_theta, sigma_pos);
 		  }
 		  else {
@@ -117,6 +119,7 @@ int main()
 		  // Calculate and output the average weighted error of the particle filter over all time steps so far.
 		  vector<Particle> particles = pf.particles;
 		  int num_particles = particles.size();
+          std::cout << "in main, number of particles = " << num_particles << std::endl;
 		  double highest_weight = -1.0;
 		  Particle best_particle;
 		  double weight_sum = 0.0;

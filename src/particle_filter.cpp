@@ -19,11 +19,30 @@
 
 using namespace std;
 
-void ParticleFilter::init(double x, double y, double theta, double std[]) {
+void ParticleFilter::init(double x, double y, double theta, double std[]) 
+{
 	// TODO: Set the number of particles. Initialize all particles to first position (based on estimates of 
 	//   x, y, theta and their uncertainties from GPS) and all weights to 1. 
 	// Add random Gaussian noise to each particle.
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
+    num_particles = 10;
+    double std_x = std[0];
+    double std_y = std[1];
+    double std_theta = std[2];
+    std::default_random_engine generator;
+    std::normal_distribution<double> dist_x(x, std_x);
+    std::normal_distribution<double> dist_y(y, std_y);
+    std::normal_distribution<double> dist_theta(theta, std_theta);
+    for (int i=0; i<num_particles; i++)
+    {
+        Particle p;
+        p.id = i;
+        p.x = dist_x(generator);
+        p.y = dist_y(generator);;
+        p.theta = dist_theta(generator);
+        p.weight = 1.0;
+        particles.push_back(p);
+    }
 
 }
 
@@ -32,6 +51,29 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	// NOTE: When adding noise you may find std::normal_distribution and std::default_random_engine useful.
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
+
+    double std_x = std_pos[0];
+    double std_y = std_pos[1];
+    double std_theta = std_pos[2];
+    std::default_random_engine generator;
+    for (int i=0; i<num_particles; i++)
+    {
+        Particle p = particles[i];
+        double dtheta = yaw_rate * delta_t;
+        std::normal_distribution<double> dist_theta(dtheta, std_theta);
+        double theta_f = p.theta + dtheta + dist_theta(generator);
+        p.theta = theta_f;
+
+        double dx = velocity * (sin(theta_f) - sin(p.theta)) / yaw_rate;
+        std::normal_distribution<double> dist_x(dx, std_x);
+        p.x += dx + dist_x(generator);
+
+        double dy = velocity * (cos(p.theta) - cos(theta_f)) / yaw_rate;
+        std::normal_distribution<double> dist_y(dy, std_y);
+        p.y += dy + dist_y(generator);
+    }
+
+
 
 }
 

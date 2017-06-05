@@ -1,3 +1,7 @@
 data
 build
 sandbox
+term2_sim_mac
+cmakepatch.txt
+install-mac.sh
+*.swp
