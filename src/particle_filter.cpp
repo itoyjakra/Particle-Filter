@@ -7,6 +7,7 @@
 #include <sstream>
 #include <string>
 #include <iterator>
+#include <assert.h>
 
 #include "particle_filter.h"
 
@@ -114,8 +115,12 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	//   and the following is a good resource for the actual equation to implement (look at equation 
 	//   3.33
 	//   http://planning.cs.uiuc.edu/node99.html
+    
     std::cout << "number of observations = " << observations.size() << std::endl;
     std::vector<LandmarkObs>::iterator it; 
+    double sigma_x = std_landmark[0];
+    double sigma_y = std_landmark[1];
+
     for (int i=0; i<num_particles; i++)
     {
         Particle p = particles[i];
@@ -159,6 +164,17 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
             landmark_y_list.push_back(map_landmarks.landmark_list[closest_landmark].y_f);
         }
         p = SetAssociations(p, landmark_id_list, landmark_x_list, landmark_y_list);
+        assert (observations.size() == p.associations.size());
+
+        double sum = 0;
+        for (int j=0; j<observations.size(); j++)
+        {
+            LandmarkObs obs = observations[j];
+            //std::cout << "____  " << j << "\t" << p.sense_x[j] << "\t" << obs.x << std::endl;
+            sum += pow(p.sense_x[j] - obs.x, 2) / (2 * sigma_x * sigma_x);
+            sum += pow(p.sense_y[j] - obs.y, 2) / (2 * sigma_y * sigma_y);
+        }
+        p.weight = exp(-sum) / pow(2 * sigma_x * sigma_y, observations.size());
     }
 
 }
