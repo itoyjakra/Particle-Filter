@@ -40,7 +40,8 @@ void ParticleFilter::init(double x, double y, double theta, double std[])
 
 }
 
-void ParticleFilter::prediction(double delta_t, double std_pos[], double velocity, double yaw_rate) {
+void ParticleFilter::prediction(double delta_t, double std_pos[], double velocity, double yaw_rate) 
+{
 	// TODO: Add measurements to each particle and add random Gaussian noise.
 	// NOTE: When adding noise you may find std::normal_distribution and std::default_random_engine useful.
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
@@ -66,20 +67,20 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
         std::normal_distribution<double> dist_y(dy, std_y);
         p.y += dy + dist_y(generator);
     }
-
-
-
 }
 
-void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
+void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) 
+{
 	// TODO: Find the predicted measurement that is closest to each observed measurement and assign the 
 	//   observed measurement to this particular landmark.
 	// NOTE: this method will NOT be called by the grading code. But you will probably find it useful to 
 	//   implement this method and use it as a helper during the updateWeights phase.
 
+    std::cout << "predicted size = " << predicted.size() << std::endl;
+    std::cout << "observations size = " << observations.size() << std::endl;
 }
 
-void transform_coord(Particle p, std::vector<LandmarkObs> &obs)
+void transform_coord_list(Particle p, std::vector<LandmarkObs> &obs)
 {
     double x = p.x;
     double y = p.y;
@@ -88,6 +89,15 @@ void transform_coord(Particle p, std::vector<LandmarkObs> &obs)
         obs[i].x = p.x + obs[i].x * cos(p.theta) - obs[i].y * sin(p.theta);
         obs[i].y = p.y + obs[i].x * sin(p.theta) + obs[i].y * cos(p.theta);
     }
+
+}
+
+void transform_coord(Particle p, LandmarkObs &obs)
+{
+    double x = p.x;
+    double y = p.y;
+    obs.x = p.x + obs.x * cos(p.theta) - obs.y * sin(p.theta);
+    obs.y = p.y + obs.x * sin(p.theta) + obs.y * cos(p.theta);
 
 }
 
@@ -113,12 +123,42 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         //for(it=observations.begin() ; it < observations.end(); it++ )
             //std::cout << (*it).x << "\t" << (*it).y << std::endl;
 
-        transform_coord(p, observations);
         //std::cout << "after transform:\n";
         //for(it=observations.begin() ; it < observations.end(); it++ )
             //std::cout << (*it).x << "\t" << (*it).y << std::endl;
 
 
+        std::vector<int> landmark_id_list;
+        std::vector<double> landmark_x_list;
+        std::vector<double> landmark_y_list;
+
+        for (int j=0; j<observations.size(); j++)
+        {
+            LandmarkObs obs = observations[j];
+            transform_coord(p, obs);
+
+            double min_dist = 0;
+            int closest_landmark;
+
+
+            for (int l=0; l<map_landmarks.landmark_list.size(); l++)
+            {
+                double x1 = p.x;
+                double y1 = p.y;
+                double x2 = map_landmarks.landmark_list[l].x_f;
+                double y2 = map_landmarks.landmark_list[l].y_f;
+                double d = dist(x1, y1, x2, y2);
+                if ( (d < min_dist) & (d < sensor_range) )
+                {
+                    min_dist = d;
+                    closest_landmark = l;
+                }
+            }
+            landmark_id_list.push_back(map_landmarks.landmark_list[closest_landmark].id_i);
+            landmark_x_list.push_back(map_landmarks.landmark_list[closest_landmark].x_f);
+            landmark_y_list.push_back(map_landmarks.landmark_list[closest_landmark].y_f);
+        }
+        p = SetAssociations(p, landmark_id_list, landmark_x_list, landmark_y_list);
     }
 
 }
