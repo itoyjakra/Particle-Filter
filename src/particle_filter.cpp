@@ -1,10 +1,3 @@
-/*
- * particle_filter.cpp
- *
- *  Created on: Dec 12, 2016
- *      Author: Tiffany Huang
- */
-
 #include <random>
 #include <algorithm>
 #include <iostream>
@@ -43,6 +36,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[])
         p.weight = 1.0;
         particles.push_back(p);
     }
+    is_initialized = false;
 
 }
 
@@ -85,8 +79,21 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 
 }
 
+void transform_coord(Particle p, std::vector<LandmarkObs> &obs)
+{
+    double x = p.x;
+    double y = p.y;
+    for (int i=0; i<obs.size(); i++)
+    {
+        obs[i].x = p.x + obs[i].x * cos(p.theta) - obs[i].y * sin(p.theta);
+        obs[i].y = p.y + obs[i].x * sin(p.theta) + obs[i].y * cos(p.theta);
+    }
+
+}
+
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], 
-		std::vector<LandmarkObs> observations, Map map_landmarks) {
+		std::vector<LandmarkObs> observations, Map map_landmarks) 
+{
 	// TODO: Update the weights of each particle using a mult-variate Gaussian distribution. You can read
 	//   more about this distribution here: https://en.wikipedia.org/wiki/Multivariate_normal_distribution
 	// NOTE: The observations are given in the VEHICLE'S coordinate system. Your particles are located
@@ -97,6 +104,23 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	//   and the following is a good resource for the actual equation to implement (look at equation 
 	//   3.33
 	//   http://planning.cs.uiuc.edu/node99.html
+    std::cout << "number of observations = " << observations.size() << std::endl;
+    std::vector<LandmarkObs>::iterator it; 
+    for (int i=0; i<num_particles; i++)
+    {
+        Particle p = particles[i];
+        //std::cout << "particle number = " << i << "  nobs = " << observations.size() << std::endl;
+        //for(it=observations.begin() ; it < observations.end(); it++ )
+            //std::cout << (*it).x << "\t" << (*it).y << std::endl;
+
+        transform_coord(p, observations);
+        //std::cout << "after transform:\n";
+        //for(it=observations.begin() ; it < observations.end(); it++ )
+            //std::cout << (*it).x << "\t" << (*it).y << std::endl;
+
+
+    }
+
 }
 
 void ParticleFilter::resample() {
