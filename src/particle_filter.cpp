@@ -8,6 +8,7 @@
 #include <string>
 #include <iterator>
 #include <assert.h>
+#include <map>
 
 #include "particle_filter.h"
 
@@ -19,7 +20,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[])
 	//   x, y, theta and their uncertainties from GPS) and all weights to 1. 
 	// Add random Gaussian noise to each particle.
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
-    num_particles = 10;
+    num_particles = 100;
     double std_x = std[0];
     double std_y = std[1];
     double std_theta = std[2];
@@ -124,14 +125,6 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     for (int i=0; i<num_particles; i++)
     {
         Particle p = particles[i];
-        //std::cout << "particle number = " << i << "  nobs = " << observations.size() << std::endl;
-        //for(it=observations.begin() ; it < observations.end(); it++ )
-            //std::cout << (*it).x << "\t" << (*it).y << std::endl;
-
-        //std::cout << "after transform:\n";
-        //for(it=observations.begin() ; it < observations.end(); it++ )
-            //std::cout << (*it).x << "\t" << (*it).y << std::endl;
-
 
         std::vector<int> landmark_id_list;
         std::vector<double> landmark_x_list;
@@ -170,7 +163,6 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
         for (int j=0; j<observations.size(); j++)
         {
             LandmarkObs obs = observations[j];
-            //std::cout << "____  " << j << "\t" << p.sense_x[j] << "\t" << obs.x << std::endl;
             sum += pow(p.sense_x[j] - obs.x, 2) / (2 * sigma_x * sigma_x);
             sum += pow(p.sense_y[j] - obs.y, 2) / (2 * sigma_y * sigma_y);
         }
@@ -179,12 +171,53 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
 }
 
-void ParticleFilter::resample() {
+void ParticleFilter::resample() 
+{
 	// TODO: Resample particles with replacement with probability proportional to their weight. 
 	// NOTE: You may find std::discrete_distribution helpful here.
 	//   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
 
+    std::vector<double> w_dist;
+    std::vector<int> id_dist;
+
+    for (int i=0; i<num_particles; i++)
+    {
+        w_dist.push_back(particles[i].weight);
+        id_dist.push_back(particles[i].id);
+    }
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::discrete_distribution<> distribution(w_dist.begin(), w_dist.end());
+    std::map<int, int> m;
+    for(int n=0; n<num_particles; ++n) {
+        ++m[distribution(gen)];
+    }
+
+    std::vector<Particle> refresh_p;
+    for (int i=0; i<num_particles; i++)
+        if (m[i] > 0)
+            refresh_p.push_back(particles[i]);
+    num_particles = refresh_p.size();
+    particles = refresh_p;
+    std::cout << "new number of particles = " << num_particles << std::endl;
+
+    /*
+    std::vector<int> erase_list;
+    for (int i=0; i<num_particles; i++)
+    {
+        if (m[i] < 1)
+        {
+            std::cout << "erasing particle number " << i << std::endl;
+            erase_list.push_back(i);
+        }
+    }
+            particles.erase(particles.begin() + i);
+    num_particles = particles.size();
+    std::cout << "new number of particles = " << num_particles << std::endl;
+    */
 }
+
 
 Particle ParticleFilter::SetAssociations(Particle particle, std::vector<int> associations, std::vector<double> sense_x, std::vector<double> sense_y)
 {
