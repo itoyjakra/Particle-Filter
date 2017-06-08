@@ -38,7 +38,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[])
         p.weight = 1.0;
         particles.push_back(p);
     }
-    is_initialized = false;
+    is_initialized = true;
 
 }
 
@@ -58,16 +58,17 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
         Particle p = particles[i];
         double dtheta = yaw_rate * delta_t;
         std::normal_distribution<double> dist_theta(dtheta, std_theta);
-        double theta_f = p.theta + dtheta + dist_theta(generator);
-        p.theta = theta_f;
+        double theta_f = p.theta + dtheta;
 
         double dx = velocity * (sin(theta_f) - sin(p.theta)) / yaw_rate;
         std::normal_distribution<double> dist_x(dx, std_x);
-        p.x += dx + dist_x(generator);
+        particles[i].x += dx + dist_x(generator);
 
         double dy = velocity * (cos(p.theta) - cos(theta_f)) / yaw_rate;
         std::normal_distribution<double> dist_y(dy, std_y);
-        p.y += dy + dist_y(generator);
+        particles[i].y += dy + dist_y(generator);
+
+        particles[i].theta = theta_f + dist_theta(generator);
     }
 }
 
@@ -172,8 +173,9 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
             sum += pow(p.sense_y[j] - iobs.y, 2) / (2 * sigma_y * sigma_y);
             //std::cout << j << ": " << p.sense_x[j] << ", " << p.sense_y[j] << "| " << iobs.x << ", " << iobs.y << std::endl;
         }
-        p.weight = exp(-sum) / pow(2 * sigma_x * sigma_y, obs.size());
-        particles[i].weight = p.weight;
+        p.weight = exp(-sum) / pow(2 * M_PI * sigma_x * sigma_y, obs.size());
+        //particles[i].weight = p.weight;
+        particles[i] = p;
         std::cout << "^^^ " << i << ", " << sum << ", " << p.weight << std::endl;
     }
 
@@ -187,6 +189,7 @@ void ParticleFilter::resample()
 
     std::vector<double> w_dist;
     std::vector<int> id_dist;
+
 
     double max_weight = 0;
     for (int i=0; i<num_particles; i++)
@@ -211,6 +214,14 @@ void ParticleFilter::resample()
         ++m[distribution(gen)];
     }
 
+    std::cout << "old set of particles \n";
+    for (int i=0; i<num_particles; i++)
+    {
+        Particle p = particles[i];
+        std::cout << i << " " << p.x << ", " << p.y << ", w = " << p.weight << std::endl;
+    }
+
+
     std::vector<Particle> refresh_p;
     for (int i=0; i<num_particles; i++)
     {
@@ -222,10 +233,14 @@ void ParticleFilter::resample()
             c--;
         }
     }
-    std::cout << "new number of particles = " << refresh_p.size() << std::endl;
-    std::cout << "old number of particles = " << particles.size() << std::endl;
     assert (refresh_p.size() == particles.size());
     particles = refresh_p;
+    std::cout << "new set of particles \n";
+    for (int i=0; i<num_particles; i++)
+    {
+        Particle p = particles[i];
+        std::cout << i << " " << p.x << ", " << p.y << ", w = " << p.weight << std::endl;
+    }
 
 
     /*
