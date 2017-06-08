@@ -243,28 +243,6 @@ void ParticleFilter::resample()
     }
 
 
-    /*
-    std::vector<Particle> refresh_p;
-    for (int i=0; i<num_particles; i++)
-        if (m[i] > 0)
-            refresh_p.push_back(particles[i]);
-    num_particles = refresh_p.size();
-    particles = refresh_p;
-    std::cout << "new number of particles = " << num_particles << std::endl;
-
-    std::vector<int> erase_list;
-    for (int i=0; i<num_particles; i++)
-    {
-        if (m[i] < 1)
-        {
-            std::cout << "erasing particle number " << i << std::endl;
-            erase_list.push_back(i);
-        }
-    }
-            particles.erase(particles.begin() + i);
-    num_particles = particles.size();
-    std::cout << "new number of particles = " << num_particles << std::endl;
-    */
 }
 
 
