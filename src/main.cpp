@@ -129,9 +129,7 @@ int main()
 			weight_sum += particles[i].weight;
 		  }
 		  cout << "highest w " << highest_weight << endl;
-		  cout << "sum w " << weight_sum << endl;
 		  cout << "average w " << weight_sum/num_particles << endl;
-          //assert (highest_weight > 0);
 
           json msgJson;
           msgJson["best_particle_x"] = best_particle.x;
@@ -144,7 +142,7 @@ int main()
           msgJson["best_particle_sense_y"] = pf.getSenseY(best_particle);
 
           auto msg = "42[\"best_particle\"," + msgJson.dump() + "]";
-           std::cout << msg << std::endl;
+          // std::cout << msg << std::endl;
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
 	  
         }

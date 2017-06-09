@@ -59,8 +59,9 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
         Particle p = particles[i];
         if (fabs(yaw_rate) < 1.0e-5)
         {
-            newx = p.x + cos(p.theta) * delta_t;
-            newy = p.y + sin(p.theta) * delta_t;
+            newx = p.x + velocity * cos(p.theta) * delta_t;
+            newy = p.y + velocity * sin(p.theta) * delta_t;
+            theta_f = p.theta;
         }
         else
         {
@@ -223,6 +224,7 @@ void ParticleFilter::resample()
     assert (refresh_p.size() == particles.size());
     particles = refresh_p;
 
+    /*
     std::vector<int> v;
     for (int i=0; i<num_particles; i++)
         v.push_back(particles[i].id);
@@ -230,6 +232,7 @@ void ParticleFilter::resample()
     std::sort(v.begin(), v.end());
     int uniqueCount = std::unique(v.begin(), v.end()) - v.begin();
     std::cout << "number of unique particles = " << uniqueCount << std::endl;
+    */
 
 }
 
