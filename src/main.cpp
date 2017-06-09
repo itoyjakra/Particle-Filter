@@ -60,24 +60,22 @@ int main()
       	
         auto j = json::parse(s);
         std::string event = j[0].get<std::string>();
-        std::cout << "event = " << event << std::endl;
         
         if (event == "telemetry") {
           // j[1] is the data JSON object
 
-
-          if (!pf.initialized()) {
+          if (!pf.initialized()) 
+          {
 
           	// Sense noisy position data from the simulator
 			double sense_x = std::stod(j[1]["sense_x"].get<std::string>());
 			double sense_y = std::stod(j[1]["sense_y"].get<std::string>());
 			double sense_theta = std::stod(j[1]["sense_theta"].get<std::string>());
 
-            std::cout << sense_x << "\t" << sense_y << "\t" << sense_theta << std::endl;
-
 			pf.init(sense_x, sense_y, sense_theta, sigma_pos);
 		  }
-		  else {
+		  else 
+          {
 			// Predict the vehicle's next state from previous (noiseless control) data.
 		  	double previous_velocity = std::stod(j[1]["previous_velocity"].get<std::string>());
 			double previous_yawrate = std::stod(j[1]["previous_yawrate"].get<std::string>());
@@ -120,7 +118,6 @@ int main()
 		  // Calculate and output the average weighted error of the particle filter over all time steps so far.
 		  vector<Particle> particles = pf.particles;
 		  int num_particles = particles.size();
-          std::cout << "in main, number of particles = " << num_particles << std::endl;
 		  double highest_weight = -1.0;
 		  Particle best_particle;
 		  double weight_sum = 0.0;
@@ -132,7 +129,9 @@ int main()
 			weight_sum += particles[i].weight;
 		  }
 		  cout << "highest w " << highest_weight << endl;
+		  cout << "sum w " << weight_sum << endl;
 		  cout << "average w " << weight_sum/num_particles << endl;
+          //assert (highest_weight > 0);
 
           json msgJson;
           msgJson["best_particle_x"] = best_particle.x;
