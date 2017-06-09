@@ -106,11 +106,11 @@ std::vector<LandmarkObs> transform_coord_list(Particle p, std::vector<LandmarkOb
 
 void transform_coord(Particle p, LandmarkObs &obs)
 {
-    double x = p.x;
-    double y = p.y;
-    obs.x = p.x + obs.x * cos(p.theta) - obs.y * sin(p.theta);
-    obs.y = p.y + obs.x * sin(p.theta) + obs.y * cos(p.theta);
-
+    double x, y;
+    x = p.x + obs.x * cos(p.theta) - obs.y * sin(p.theta);
+    y = p.y + obs.x * sin(p.theta) + obs.y * cos(p.theta);
+    obs.x = x;
+    obs.y = y;
 }
 
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], 
@@ -189,27 +189,15 @@ void ParticleFilter::resample()
     std::vector<double> w_dist;
     std::vector<int> id_dist;
 
-
-    double max_weight = 0;
     for (int i=0; i<num_particles; i++)
-    {
-        if (particles[i].weight > max_weight)
-            max_weight = particles[i].weight;
-    }
-
-    for (int i=0; i<num_particles; i++)
-    {
         w_dist.push_back(particles[i].weight);
-        id_dist.push_back(particles[i].id);
-    }
 
     std::random_device rd;
     std::mt19937 gen(rd());
     std::discrete_distribution<> distribution(w_dist.begin(), w_dist.end());
     std::map<int, int> m;
-    for(int n=0; n<num_particles; ++n) {
+    for(int n=0; n<num_particles; ++n)
         ++m[distribution(gen)];
-    }
 
     std::vector<Particle> refresh_p;
     for (int i=0; i<num_particles; i++)
@@ -223,16 +211,6 @@ void ParticleFilter::resample()
     }
     assert (refresh_p.size() == particles.size());
     particles = refresh_p;
-
-    /*
-    std::vector<int> v;
-    for (int i=0; i<num_particles; i++)
-        v.push_back(particles[i].id);
-
-    std::sort(v.begin(), v.end());
-    int uniqueCount = std::unique(v.begin(), v.end()) - v.begin();
-    std::cout << "number of unique particles = " << uniqueCount << std::endl;
-    */
 
 }
 
