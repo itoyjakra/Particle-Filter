@@ -20,7 +20,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[])
 	//   x, y, theta and their uncertainties from GPS) and all weights to 1. 
 	// Add random Gaussian noise to each particle.
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
-    num_particles = 25;
+    num_particles = 13;
     double std_x = std[0];
     double std_y = std[1];
     double std_theta = std[2];
@@ -39,7 +39,6 @@ void ParticleFilter::init(double x, double y, double theta, double std[])
         particles.push_back(p);
     }
     is_initialized = true;
-
 }
 
 void ParticleFilter::prediction(double delta_t, double std_pos[], double velocity, double yaw_rate) 
@@ -56,19 +55,22 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
     for (int i=0; i<num_particles; i++)
     {
         Particle p = particles[i];
-        double dtheta = yaw_rate * delta_t;
-        std::normal_distribution<double> dist_theta(dtheta, std_theta);
-        double theta_f = p.theta + dtheta;
+        std::cout << "old particle " << i << " " << p.x << " " << p.y << " " << p.theta << std::endl;
+        //double dtheta = yaw_rate * delta_t;
+        double ratio = velocity / yaw_rate;
 
-        double dx = velocity * (sin(theta_f) - sin(p.theta)) / yaw_rate;
-        std::normal_distribution<double> dist_x(dx, std_x);
-        particles[i].x += dx + dist_x(generator);
+        double theta_f = p.theta + yaw_rate * delta_t;
+        double newx = p.x + (sin(theta_f) - sin(p.theta)) * ratio;
+        double newy = p.y + (cos(p.theta) - cos(theta_f)) * ratio;
 
-        double dy = velocity * (cos(p.theta) - cos(theta_f)) / yaw_rate;
-        std::normal_distribution<double> dist_y(dy, std_y);
-        particles[i].y += dy + dist_y(generator);
+        std::normal_distribution<double> dist_x(newx, std_x);
+        std::normal_distribution<double> dist_y(newy, std_y);
+        std::normal_distribution<double> dist_theta(theta_f, std_theta);
 
+        particles[i].x = newx + dist_x(generator);
+        particles[i].y = newy + dist_y(generator);
         particles[i].theta = theta_f + dist_theta(generator);
+        std::cout << "new particle " << i << " " << particles[i].x << " " << particles[i].y << " " << particles[i].theta << std::endl;
     }
 }
 
@@ -85,12 +87,13 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 
 std::vector<LandmarkObs> transform_coord_list(Particle p, std::vector<LandmarkObs> obs)
 {
-    double x = p.x;
-    double y = p.y;
     for (int i=0; i<obs.size(); i++)
     {
-        obs[i].x = p.x + obs[i].x * cos(p.theta) - obs[i].y * sin(p.theta);
-        obs[i].y = p.y + obs[i].x * sin(p.theta) + obs[i].y * cos(p.theta);
+        double x, y;
+        x = p.x + obs[i].x * cos(p.theta) - obs[i].y * sin(p.theta);
+        y = p.y + obs[i].x * sin(p.theta) + obs[i].y * cos(p.theta);
+        obs[i].x = x;
+        obs[i].y = y;
     }
     return obs;
 }
@@ -163,6 +166,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
             landmark_y_list.push_back(map_landmarks.landmark_list[closest_landmark].y_f);
         }
         p = SetAssociations(p, landmark_id_list, landmark_x_list, landmark_y_list);
+        assert (observations.size() == landmark_id_list.size());
         assert (observations.size() == p.associations.size());
 
         double sum = 0;
